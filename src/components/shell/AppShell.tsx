@@ -16,6 +16,20 @@ type Props = {
   children: ReactNode;
 };
 
+/**
+ * Determines whether white or black text is more readable on the given bg.
+ * Returns "#ffffff" or "#1f2937" (gray-800).
+ */
+export function readableTextColor(hex: string): string {
+  const c = hex.replace("#", "");
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  // Relative luminance (sRGB)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55 ? "#1f2937" : "#ffffff";
+}
+
 export function AppShell({
   nav,
   orgName,
@@ -29,7 +43,13 @@ export function AppShell({
   return (
     <div
       className="min-h-screen bg-gray-50"
-      style={{ "--brand-color": brandColor } as React.CSSProperties}
+      style={
+        {
+          "--brand": brandColor,
+          "--brand-color": brandColor,
+          "--brand-text": readableTextColor(brandColor),
+        } as React.CSSProperties
+      }
     >
       <Sidebar
         nav={nav}
