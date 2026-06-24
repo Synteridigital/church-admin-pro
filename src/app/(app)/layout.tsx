@@ -1,18 +1,25 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { resolveShell } from "@/lib/navigation-resolver";
+import { AppShell } from "@/components/shell/AppShell";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const shell = await resolveShell();
+  if (!shell) redirect("/login");
 
-  if (!user) redirect("/login");
-
-  // Shell comes in Phase 2 — for now just render the content area.
-  return <div style={{ minHeight: "100vh" }}>{children}</div>;
+  return (
+    <AppShell
+      nav={shell.nav}
+      orgName={shell.org.name}
+      orgSlug={shell.org.slug}
+      brandColor={shell.org.brandColor}
+      userName={shell.user.fullName}
+      userEmail={shell.user.email}
+    >
+      {children}
+    </AppShell>
+  );
 }
