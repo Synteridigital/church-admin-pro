@@ -15,6 +15,9 @@ export type ShellData = {
 /**
  * Server-only: resolves the nav + user/org data for the app shell.
  * Returns null if the user is not authenticated.
+ *
+ * Access source: positions table (via members.profile_id → positions.module_key).
+ * Super-admins see all enabled modules regardless of positions.
  */
 export async function resolveShell(): Promise<ShellData | null> {
   const supabase = await createClient();
@@ -25,7 +28,7 @@ export async function resolveShell(): Promise<ShellData | null> {
   if (!user) return null;
 
   // Parallel fetches — all go through RLS
-  const [profileRes, orgRes, modulesRes, userRolesRes] = await Promise.all([
+  const [profileRes, orgRes, modulesRes, memberRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name, email, org_id, is_super_admin")
@@ -33,10 +36,12 @@ export async function resolveShell(): Promise<ShellData | null> {
       .single(),
     supabase.from("orgs").select("name, slug, brand_color").single(),
     supabase.from("org_modules").select("module_key"),
+    // Fetch the user's member record + their positions in one query
     supabase
-      .from("user_roles")
-      .select("role_key, roles!inner(module_key)")
-      .eq("user_id", user.id),
+      .from("members")
+      .select("id, positions(module_key)")
+      .eq("profile_id", user.id)
+      .single(),
   ]);
 
   const profile = profileRes.data;
@@ -47,15 +52,18 @@ export async function resolveShell(): Promise<ShellData | null> {
     (modulesRes.data ?? []).map((m) => m.module_key)
   );
 
-  // Build a set of module_keys the user has roles in
+  // Build a set of module_keys the user has positions in
   const userModuleKeys = new Set<string>();
-  for (const ur of userRolesRes.data ?? []) {
-    // roles is joined as an object (single row via !inner)
-    const roles = ur.roles as unknown as { module_key: string };
-    if (roles?.module_key) userModuleKeys.add(roles.module_key);
+  if (memberRes.data) {
+    const positions = memberRes.data.positions as
+      | { module_key: string }[]
+      | null;
+    for (const pos of positions ?? []) {
+      userModuleKeys.add(pos.module_key);
+    }
   }
 
-  // Filter module groups: org must have enabled it AND (super-admin OR user has a matching role)
+  // Filter module groups: org enabled it AND (super-admin OR user has a position in that module)
   const visibleGroups = MODULE_GROUPS.filter(
     (g) =>
       enabledModuleKeys.has(g.moduleKey) &&
