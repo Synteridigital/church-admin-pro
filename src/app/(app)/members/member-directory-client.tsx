@@ -4,29 +4,15 @@ import { useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/DataTable";
 import { Search, MoreHorizontal, Eye, Pencil } from "lucide-react";
+import { MemberAvatar } from "@/components/ui/MemberAvatar";
 import type { MemberRow } from "./page";
 
 const col = createColumnHelper<MemberRow>();
 
 function MemberCell({ row }: { row: MemberRow }) {
-  const initials = row.full_name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <a href={`/members/${row.id}`} className="flex items-center gap-3 group">
-      <div
-        className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-        style={{
-          backgroundColor: "var(--brand)",
-          color: "var(--brand-text)",
-        }}
-      >
-        {initials}
-      </div>
+      <MemberAvatar fullName={row.full_name} photoUrl={row.photo_url} />
       <div className="min-w-0">
         <p className="text-sm font-medium text-gray-900 truncate group-hover:underline">
           {row.full_name}
@@ -184,7 +170,7 @@ export default function MemberDirectoryClient({
         </div>
         {isSuperAdmin && (
           <a
-            href="/members/new"
+            href="/members/intake"
             className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{
               backgroundColor: "var(--brand)",

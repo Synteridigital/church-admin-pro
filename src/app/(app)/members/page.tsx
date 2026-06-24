@@ -12,6 +12,7 @@ export type MemberRow = {
   gender: string | null;
   membership_status: string;
   profile_id: string | null;
+  photo_url: string | null;
   positions: { module_key: string; type: string; title: string | null }[];
 };
 
@@ -31,7 +32,7 @@ export default async function MembersPage() {
 
   const { data: members, error } = await supabase
     .from("members")
-    .select("id, full_name, email, phone, gender, membership_status, profile_id, positions(module_key, type, title)")
+    .select("id, full_name, email, phone, gender, membership_status, profile_id, photo_url, positions(module_key, type, title)")
     .order("full_name");
 
   if (error) {
@@ -46,7 +47,7 @@ export default async function MembersPage() {
           headline="No members yet"
           description="Add your first church member to get started."
           actionLabel={isSuperAdmin ? "Add member" : undefined}
-          actionHref={isSuperAdmin ? "/members/new" : undefined}
+          actionHref={isSuperAdmin ? "/members/intake" : undefined}
         />
         <ScriptureFooter />
       </>
