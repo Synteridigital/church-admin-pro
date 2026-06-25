@@ -29,15 +29,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAuthRoute =
+  const isPublicRoute =
     path.startsWith("/login") ||
     path.startsWith("/register") ||
     path.startsWith("/verify-email") ||
     path.startsWith("/set-password") ||
-    path.startsWith("/auth");
+    path.startsWith("/auth") ||
+    path.startsWith("/submit") ||
+    path.startsWith("/api/public/");
 
   // Unauthenticated user hitting a protected route → login
-  if (!user && !isAuthRoute && path !== "/") {
+  if (!user && !isPublicRoute && path !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", path);
